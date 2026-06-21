@@ -38,8 +38,6 @@ export async function handleCrawl(ctx: BotContext): Promise<void> {
 	}
 
 	// Validate URL
-	let url = isImplicit ? parts[0] : parts[1];
-	
 	try {
 		const parsed = new URL(url);
 		if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
