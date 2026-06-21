@@ -18,5 +18,8 @@
 	],
 	"browser": {
 		"binding": "BROWSER"
+	},
+   "triggers": {
+		"crons": ["* * * * *"]
 	}
 }
