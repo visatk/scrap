@@ -58,8 +58,11 @@ export async function handleStatus(ctx: Context): Promise<void> {
 			const buffer = new TextEncoder().encode(mdContent);
 			const hostname = url === "unknown-source" ? "docs" : new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
 
-			await ctx.replyWithDocument(new InputFile(buffer, `knowledge_base_${hostname}.md`), {
-				caption: `✅ **Crawl Complete!**\n🆔 Job: <code>${jobId}</code>\n📊 Processed ${finished} out of ${total} discovered links.\n\n🤖 *Upload this file to Claude/ChatGPT/Gemini for instant context!*`,
+			await ctx.replyWithDocument(new InputFile(buffer, `AI_KnowledgeBase_${hostname}.md`), {
+				caption: `✅ <b>Crawl Successfully Completed!</b>\n\n` +
+						 `🎯 <b>Task ID:</b> <code>${jobId}</code>\n` +
+						 `📈 <b>Stats:</b> Processed ${finished} out of ${total} pages.\n\n` +
+						 `💡 <i>Pro Tip: Upload this .md file directly to Claude, ChatGPT, or Gemini for instant, accurate context!</i>`,
 				parse_mode: "HTML"
 			});
 			return;

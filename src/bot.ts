@@ -43,8 +43,10 @@ export function createBot(token: string, env: Env, executionCtx: ExecutionContex
 		}
 
 		await ctx.reply(
-			"🤔 I don't understand that command.\n" +
-				"Send me a URL (starting with http:// or https://) or use /help to see available commands.",
+			`🤔 <b>I didn't quite catch that.</b>\n\n` +
+				`To start a crawl, simply send me a valid website URL (starting with <code>http://</code> or <code>https://</code>).\n\n` +
+				`Type /help to see all available commands!`,
+			{ parse_mode: "HTML" }
 		);
 	});
 

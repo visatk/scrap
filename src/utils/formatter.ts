@@ -19,14 +19,15 @@ export function escapeHtml(text: string): string {
  * Adds clear delimiters and metadata for each page so LLMs can easily parse it.
  */
 export function generateAiKnowledgeBase(url: string, pages: CrawlPage[]): string {
-	let doc = `# Crawl Results for AI Agent Knowledge Base\n`;
-	doc += `**Source URL:** ${url}\n`;
-	doc += `**Generated At:** ${new Date().toISOString()}\n`;
-	doc += `**Total Pages:** ${pages.length}\n\n`;
+	let doc = `# 🧠 AI Knowledge Base Generation\n\n`;
+	doc += `> **Automated Document Extraction by Pine Bot**\n> \n`;
+	doc += `> - **Source Origin:** [${url}](${url})\n`;
+	doc += `> - **Generation Time:** ${new Date().toUTCString()}\n`;
+	doc += `> - **Total Documents Processed:** ${pages.length}\n\n`;
 	doc += `---\n\n`;
 
 	// Create an index/table of contents
-	doc += `## Table of Contents\n\n`;
+	doc += `## 📑 Table of Contents\n\n`;
 	pages.forEach((page, index) => {
 		const title = page.metadata?.title || page.url;
 		doc += `${index + 1}. [${title}](${page.url})\n`;
@@ -37,7 +38,7 @@ export function generateAiKnowledgeBase(url: string, pages: CrawlPage[]): string
 	pages.forEach((page, index) => {
 		const title = page.metadata?.title || page.url;
 		
-		doc += `## Document ${index + 1}: ${title}\n`;
+		doc += `## 📄 Document ${index + 1}: ${title}\n\n`;
 		doc += `**URL:** ${page.url}\n`;
 		if (page.metadata?.status) {
 			doc += `**HTTP Status:** ${page.metadata.status}\n`;
@@ -48,7 +49,7 @@ export function generateAiKnowledgeBase(url: string, pages: CrawlPage[]): string
 		}
 
 		if (page.markdown) {
-			doc += `\n### Content\n\n`;
+			doc += `\n### 📝 Content\n\n`;
 			doc += `${page.markdown.trim()}\n\n`;
 		} else {
 			doc += `\n*No readable markdown content extracted for this page.*\n\n`;
@@ -77,15 +78,15 @@ export function formatCrawlStatus(
 				: "⏳";
 
 	let msg =
-		`${statusEmoji} <b>Crawl Status</b>\n` +
-		`🆔 <code>${escapeHtml(jobId)}</code>\n` +
-		`📌 <b>Status:</b> ${escapeHtml(status)}`;
+		`${statusEmoji} <b>Live Crawl Status</b>\n\n` +
+		`🎯 <b>Task ID:</b> <code>${escapeHtml(jobId)}</code>\n` +
+		`📌 <b>Status:</b> ${escapeHtml(status)}\n`;
 
 	if (total !== undefined) {
-		msg += `\n📊 <b>Total Pages Discovered:</b> ${total}`;
+		msg += `🗂 <b>Pages Discovered:</b> ${total}\n`;
 	}
 	if (finished !== undefined) {
-		msg += `\n📄 <b>Pages Processed:</b> ${finished}`;
+		msg += `🚀 <b>Pages Processed:</b> ${finished}\n`;
 	}
 
 	return msg;

@@ -1,27 +1,30 @@
 import type { Context } from "grammy";
 
+import { InlineKeyboard } from "grammy";
+
 /**
  * Handle /start and /help commands.
  * Sends a welcome message with usage instructions.
  */
 export async function handleStart(ctx: Context): Promise<void> {
-	const welcomeMessage =
-		`🌲 <b>Pine — Docs Scraper Bot</b>\n\n` +
-		`I crawl documentation websites and deliver the content right here in Telegram.\n\n` +
-		`<b>Commands:</b>\n` +
-		`/crawl <code>&lt;url&gt;</code> — Crawl a docs website\n` +
-		`/crawl <code>&lt;url&gt; &lt;depth&gt; &lt;maxPages&gt;</code> — Crawl with options\n` +
-		`/status <code>&lt;job_id&gt;</code> — Check crawl job status\n` +
-		`/help — Show this message\n\n` +
-		`<b>Examples:</b>\n` +
-		`<code>/crawl https://developers.cloudflare.com/workers/</code>\n` +
-		`<code>/crawl https://docs.example.com 2 20</code>\n\n` +
-		`<b>Defaults:</b>\n` +
-		`• Depth: 1 (start page + linked pages)\n` +
-		`• Max pages: 10\n` +
-		`• Output: Markdown content\n` +
-		`• Cache: 1 hour TTL\n\n` +
-		`Powered by Cloudflare Browser Rendering 🚀`;
+	const welcomeMessage = 
+		`🤖 <b>Welcome to Pine AI Crawler!</b>\n\n` +
+		`I am an advanced web crawler designed to extract clean, perfectly formatted documentation for <b>AI Agents</b> (LLMs).\n\n` +
+		`<b>🎯 How to use me:</b>\n` +
+		`Just send me any website link, and I will deep-crawl it and give you a clean <code>.md</code> file!\n\n` +
+		`<b>⚡ Advanced Commands:</b>\n` +
+		`├ <code>/crawl &lt;url&gt; &lt;depth&gt; &lt;limit&gt;</code>\n` +
+		`└ <code>/status &lt;job_id&gt;</code>\n\n` +
+		`<b>💡 Example:</b>\n` +
+		`<code>https://developers.cloudflare.com/workers/ 2 50</code>\n\n` +
+		`<i>Ready when you are! Send me a link to begin.</i> 🚀`;
 
-	await ctx.reply(welcomeMessage, { parse_mode: "HTML" });
+	const keyboard = new InlineKeyboard()
+		.url("📖 Cloudflare Docs", "https://developers.cloudflare.com/browser-rendering/");
+
+	await ctx.reply(welcomeMessage, { 
+		parse_mode: "HTML",
+		reply_markup: keyboard,
+		link_preview_options: { is_disabled: true }
+	});
 }

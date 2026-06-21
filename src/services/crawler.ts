@@ -5,11 +5,11 @@ import type {
 	CrawlPage,
 } from "../types";
 
-/** Default poll interval in milliseconds. */
-const POLL_INTERVAL_MS = 3_000;
+/** Default poll interval in milliseconds (5 seconds). */
+const POLL_INTERVAL_MS = 5_000;
 
-/** Maximum time to poll before giving up (90 seconds). */
-const MAX_POLL_MS = 120_000;
+/** Maximum time to poll before giving up (10 minutes). */
+const MAX_POLL_MS = 600_000;
 
 /**
  * Build the base URL for the Browser Rendering REST API.
@@ -115,13 +115,9 @@ export async function pollCrawl(
 			return await getCrawlStatus(accountId, apiToken, jobId, false);
 		}
 
-		if (
-			status === "errored" || 
-			status === "cancelled_due_to_timeout" || 
-			status === "cancelled_due_to_limits" ||
-			status === "cancelled_by_user"
-		) {
-			throw new Error(`Crawl job ${jobId} ended with status: ${status}`);
+		// If status is not pending or running, and we didn't return above (completed), it's a failure
+		if (status !== "pending" && status !== "running") {
+			throw new Error(`Crawl job ${jobId} ended with failed status: ${status}`);
 		}
 
 		// Wait before next poll

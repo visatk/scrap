@@ -95,8 +95,9 @@ export async function handleCrawl(ctx: Context): Promise<void> {
 			const buffer = new TextEncoder().encode(mdContent);
 			const hostname = new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
 			
-			await ctx.replyWithDocument(new InputFile(buffer, `knowledge_base_${hostname}.md`), {
-				caption: `🤖 **AI Knowledge Base**\n🔗 ${url}\n📊 Found ${cached.finished} pages.`,
+			await ctx.replyWithDocument(new InputFile(buffer, `AI_KnowledgeBase_${hostname}.md`), {
+				caption: `🤖 <b>AI Knowledge Base</b>\n🔗 ${url}\n📊 Processed ${cached.finished} pages.\n\n💡 <i>Pro Tip: Upload this .md file directly to Claude, ChatGPT, or Gemini!</i>`,
+				parse_mode: "HTML"
 			});
 			return;
 		}
@@ -116,12 +117,13 @@ export async function handleCrawl(ctx: Context): Promise<void> {
 
 		// 3. Send "working" indicator & Job ID immediately
 		await ctx.reply(
-			`🕷️ <b>Started deep crawl for AI context...</b>\n` +
-				`🔗 ${escapeHtml(url)}\n` +
-				`🆔 Job: <code>${jobId}</code>\n` +
-				`📊 Depth: ${depth} | Max pages: ${clampedLimit}\n\n` +
-				`⏳ Processing in background. I'll send the document when it's ready. You can also use <code>/status ${jobId}</code> to check manually.`,
-			{ parse_mode: "HTML" },
+			`🔍 <b>Analyzing URL & Initializing Crawl...</b>\n\n` +
+				`🔗 <b>Target:</b> ${escapeHtml(url)}\n` +
+				`🗂 <b>Depth:</b> ${depth} | <b>Max Pages:</b> ${clampedLimit}\n` +
+				`🆔 <b>Task ID:</b> <code>${jobId}</code>\n\n` +
+				`<i>⚙️ Extracting data and formatting for AI. This usually takes 1-5 minutes.</i>\n\n` +
+				`⚠️ <b>Note:</b> <i>If Cloudflare limits pause the bot in the background, you might not receive the file automatically. If it takes too long, simply tap</i> <code>/status ${jobId}</code> <i>to fetch your results manually!</i>`,
+			{ parse_mode: "HTML", link_preview_options: { is_disabled: true } },
 		);
 
 		// 4. Move polling and document generation to a background task
@@ -146,8 +148,11 @@ export async function handleCrawl(ctx: Context): Promise<void> {
 				const buffer = new TextEncoder().encode(mdContent);
 				const hostname = new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
 
-				await ctx.replyWithDocument(new InputFile(buffer, `knowledge_base_${hostname}.md`), {
-					caption: `✅ **Crawl Complete!**\n🆔 Job: <code>${jobId}</code>\n📊 Processed ${finished} out of ${total} discovered links.\n\n🤖 *Upload this file to Claude/ChatGPT/Gemini for instant context!*`,
+				await ctx.replyWithDocument(new InputFile(buffer, `AI_KnowledgeBase_${hostname}.md`), {
+					caption: `✅ <b>Crawl Successfully Completed!</b>\n\n` +
+							 `🎯 <b>Task ID:</b> <code>${jobId}</code>\n` +
+							 `📈 <b>Stats:</b> Processed ${finished} out of ${total} pages.\n\n` +
+							 `💡 <i>Pro Tip: Upload this .md file directly to Claude, ChatGPT, or Gemini for instant, accurate context!</i>`,
 					parse_mode: "HTML"
 				});
 			} catch (bgError) {
