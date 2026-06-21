@@ -45,8 +45,8 @@ export function createBot(token: string, env: Env, executionCtx: ExecutionContex
 		await ctx.reply(
 			`🤔 <b>I didn't quite catch that.</b>\n\n` +
 				`To start a crawl, simply send me a valid website URL (starting with <code>http://</code> or <code>https://</code>).\n\n` +
-				`Type /help to see all available commands!`,
-			{ parse_mode: "HTML" }
+				`Type /help to see all available commands, or visit our <a href="https://t.me/drkingbd">Developer Channel</a> for updates!`,
+			{ parse_mode: "HTML", link_preview_options: { is_disabled: true } }
 		);
 	});
 

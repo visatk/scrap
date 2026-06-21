@@ -20,6 +20,8 @@ export async function handleStart(ctx: Context): Promise<void> {
 		`<i>Ready when you are! Send me a link to begin.</i> 🚀`;
 
 	const keyboard = new InlineKeyboard()
+		.url("👨‍💻 Developer Channel", "https://t.me/drkingbd")
+		.row()
 		.url("📖 Cloudflare Docs", "https://developers.cloudflare.com/browser-rendering/");
 
 	await ctx.reply(welcomeMessage, { 
