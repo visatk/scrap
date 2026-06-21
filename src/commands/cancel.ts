@@ -27,8 +27,8 @@ export async function handleCancel(ctx: BotContext): Promise<void> {
 
 	try {
 		await setCancelSignal(ctx.env.CRAWL_CACHE, jobId);
-		await ctx.reply(`🛑 <b>Job Cancellation Requested!</b>\n\nTask ID: <code>${jobId}</code>\n\nThe background process will safely terminate on the next polling cycle (within 5 seconds).`, { parse_mode: "HTML" });
+		await ctx.reply(`🛑 <b>Cancellation Requested</b>\n\nTask <code>${jobId}</code> will be safely terminated on the next cycle.`, { parse_mode: "HTML" });
 	} catch (error) {
-		await ctx.reply(`❌ <b>Failed to cancel job:</b> ${(error as Error).message}`, { parse_mode: "HTML" });
+		await ctx.reply(`❌ <b>Failed to cancel task:</b> ${(error as Error).message}`, { parse_mode: "HTML" });
 	}
 }

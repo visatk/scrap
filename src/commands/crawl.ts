@@ -83,6 +83,7 @@ export async function handleCrawl(ctx: BotContext): Promise<void> {
 			depth: finalDepth,
 			limit: finalLimit,
 			formats: ["markdown"] as ("markdown" | "html" | "json")[],
+			render: true,
 			crawlPurposes: ["ai-input", "ai-train", "search"]
 		};
 
@@ -97,17 +98,17 @@ export async function handleCrawl(ctx: BotContext): Promise<void> {
 		});
 
 		// 3. Send "working" indicator & Job ID immediately
-		let msg = `🔍 <b>Analyzing URL & Initializing Crawl...</b>\n\n` +
+		let msg = `🔍 <b>Initializing Crawl Task...</b>\n\n` +
 				`🔗 <b>Target:</b> ${escapeHtml(url)}\n` +
 				`🗂 <b>Depth:</b> ${finalDepth} | <b>Max Pages:</b> ${finalLimit}\n`;
 				
 		if (presetName && !depthStr && !limitStr) {
-			msg += `⚙️ <i>Using active preset: ${presetName}</i>\n`;
+			msg += `⚙️ <i>Preset applied: ${presetName}</i>\n`;
 		}
 
-		msg += `🆔 <b>Task ID:</b> <code>${jobId}</code>\n\n` +
-				`<i>⚙️ Extracting data and formatting for AI. This usually takes 1-5 minutes.</i>\n\n` +
-				`⚠️ <b>Note:</b> <i>If Cloudflare limits pause the bot in the background, you might not receive the file automatically. If it takes too long, simply tap</i> <code>/status ${jobId}</code> <i>to fetch your results manually!</i>`;
+		msg += `🆔 <b>Task:</b> <code>${jobId}</code>\n\n` +
+				`<i>⚙️ Extracting and formatting data for AI. This usually takes 1-5 minutes.</i>\n\n` +
+				`⚠️ <i>If Cloudflare limits pause the bot in the background, fetch your results manually with</i> <code>/status ${jobId}</code>`;
 
 		await ctx.reply(msg, { parse_mode: "HTML", link_preview_options: { is_disabled: true } });
 
@@ -152,12 +153,12 @@ export async function handleCrawl(ctx: BotContext): Promise<void> {
 				console.error(JSON.stringify({ message: "background polling failed", jobId, error: errMsg }));
 				
 				if (newStatus === "cancelled") {
-					await ctx.reply(`🛑 <b>Job Cancelled Successfully:</b> <code>${jobId}</code>`, { parse_mode: "HTML" });
+					await ctx.reply(`🛑 <b>Task Cancelled:</b> <code>${jobId}</code>`, { parse_mode: "HTML" });
 				} else {
 					await ctx.reply(
-						`❌ <b>Crawl polling failed for job <code>${jobId}</code></b>\n` +
+						`❌ <b>Task Failed:</b> <code>${jobId}</code>\n` +
 						`<pre>${escapeHtml(errMsg)}</pre>\n` +
-						`Use <code>/status ${jobId}</code> to check if it completed successfully on Cloudflare's end.`,
+						`<i>Check</i> <code>/status ${jobId}</code> <i>for details.</i>`,
 						{ parse_mode: "HTML" }
 					);
 				}

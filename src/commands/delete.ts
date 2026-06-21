@@ -17,11 +17,11 @@ export async function handleDelete(ctx: BotContext): Promise<void> {
 		const success = await deleteJob(ctx.env.CRAWL_CACHE, userId, jobId);
 		
 		if (success) {
-			await ctx.reply(`🗑 <b>Job Deleted!</b>\n\nTask ID: <code>${jobId}</code> has been removed from your history.`, { parse_mode: "HTML" });
+			await ctx.reply(`🗑 <b>Task Deleted</b>\n\nID <code>${jobId}</code> has been permanently removed from your history.`, { parse_mode: "HTML" });
 		} else {
-			await ctx.reply("⚠️ <b>Job not found in your history.</b>", { parse_mode: "HTML" });
+			await ctx.reply("⚠️ <b>Not Found</b>\nThis task does not exist in your history.", { parse_mode: "HTML" });
 		}
 	} catch (error) {
-		await ctx.reply(`❌ <b>Failed to delete job:</b> ${(error as Error).message}`, { parse_mode: "HTML" });
+		await ctx.reply(`❌ <b>Failed to delete:</b> ${(error as Error).message}`, { parse_mode: "HTML" });
 	}
 }

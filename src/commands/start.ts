@@ -8,21 +8,24 @@ import { InlineKeyboard } from "grammy";
  */
 export async function handleStart(ctx: Context): Promise<void> {
 	const welcomeMessage = 
-		`🤖 <b>Welcome to Pine AI Crawler!</b>\n\n` +
-		`I am an advanced web crawler designed to extract clean, perfectly formatted documentation for <b>AI Agents</b> (LLMs).\n\n` +
-		`<b>🎯 How to use me:</b>\n` +
-		`Just send me any website link, and I will deep-crawl it and give you a clean <code>.md</code> file!\n\n` +
-		`<b>⚡ Advanced Commands:</b>\n` +
-		`├ <code>/crawl &lt;url&gt; &lt;depth&gt; &lt;limit&gt;</code>\n` +
-		`└ <code>/status &lt;job_id&gt;</code>\n\n` +
-		`<b>💡 Example:</b>\n` +
-		`<code>https://developers.cloudflare.com/workers/ 2 50</code>\n\n` +
-		`<i>Ready when you are! Send me a link to begin.</i> 🚀`;
+		`🌲 <b>Welcome to Pine AI Crawler!</b>\n\n` +
+		`I am an enterprise-grade web scraper built to extract deep, clean, and structured documentation tailored for <b>AI Agents</b> (LLMs).\n\n` +
+		`<b>🎯 Quick Start:</b>\n` +
+		`Send me any link to extract its contents immediately, or type /crawl to open the Interactive Wizard.\n\n` +
+		`<b>🛠 Main Commands:</b>\n` +
+		`├ <code>/crawl</code> - Start an interactive crawl wizard\n` +
+		`├ <code>/jobs</code> - View your recent crawl tasks\n` +
+		`└ <code>/status &lt;job_id&gt;</code> - Check live job progress\n\n` +
+		`<b>⚙️ Advanced Tools:</b>\n` +
+		`├ <code>/results &lt;job_id&gt;</code> - Download completed docs\n` +
+		`├ <code>/cancel &lt;job_id&gt;</code> - Force stop a running task\n` +
+		`├ <code>/delete &lt;job_id&gt;</code> - Remove task from history\n` +
+		`├ <code>/presets</code> - Manage your crawler settings\n` +
+		`└ <code>/cancel_session</code> - Abort an active wizard\n\n` +
+		`<i>Ready to feed your AI? Send me a link to begin!</i> 🚀`;
 
 	const keyboard = new InlineKeyboard()
-		.url("👨‍💻 Developer Channel", "https://t.me/drkingbd")
-		.row()
-		.url("📖 Cloudflare Docs", "https://developers.cloudflare.com/browser-rendering/");
+		.url("👨‍💻 Developer Channel", "https://t.me/drkingbd");
 
 	await ctx.reply(welcomeMessage, { 
 		parse_mode: "HTML",

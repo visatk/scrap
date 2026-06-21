@@ -64,19 +64,19 @@ export function createBot(token: string, env: Env, executionCtx: ExecutionContex
 				if (session.step === "AWAIT_URL") {
 					// Extremely basic URL validation
 					if (!text.startsWith("http://") && !text.startsWith("https://")) {
-						await ctx.reply("⚠️ Please provide a valid URL starting with http:// or https://");
+						await ctx.reply("⚠️ <b>Invalid Protocol</b>\nPlease provide a URL starting with <code>http://</code> or <code>https://</code>", { parse_mode: "HTML" });
 						return;
 					}
 					session.url = text;
 					session.step = "AWAIT_DEPTH";
 					await saveSession(env.CRAWL_CACHE, userId, session);
-					await ctx.reply("✅ URL saved.\n\nWhat <b>depth</b> would you like? (Reply with a number, e.g. <code>2</code>)", { parse_mode: "HTML" });
+					await ctx.reply("✅ <b>URL Saved</b>\n\nWhat <b>depth</b> would you like to crawl? (Reply with a number, e.g. <code>2</code>)", { parse_mode: "HTML" });
 					return;
 				} else if (session.step === "AWAIT_DEPTH") {
 					session.depth = parseInt(text, 10) || 1;
 					session.step = "AWAIT_LIMIT";
 					await saveSession(env.CRAWL_CACHE, userId, session);
-					await ctx.reply("✅ Depth saved.\n\nWhat <b>max pages (limit)</b> would you like? (Reply with a number, e.g. <code>50</code>)", { parse_mode: "HTML" });
+					await ctx.reply("✅ <b>Depth Saved</b>\n\nWhat is the <b>max pages (limit)</b>? (Reply with a number, e.g. <code>50</code>)", { parse_mode: "HTML" });
 					return;
 				} else if (session.step === "AWAIT_LIMIT") {
 					const limit = parseInt(text, 10) || 50;
@@ -96,9 +96,9 @@ export function createBot(token: string, env: Env, executionCtx: ExecutionContex
 
 		// 3. Unrecognized Command/Text
 		await ctx.reply(
-			`🤔 <b>I didn't quite catch that.</b>\n\n` +
-				`To start a crawl, simply send me a valid website URL (starting with <code>http://</code> or <code>https://</code>) or type /crawl to start the wizard.\n\n` +
-				`Type /help to see all available commands, or visit our <a href="https://t.me/drkingbd">Developer Channel</a> for updates!`,
+			`🤔 <b>Command Not Recognized</b>\n\n` +
+				`To start a crawl, simply send me a valid website URL (starting with <code>http://</code>) or type /crawl to open the wizard.\n\n` +
+				`Type /help to see all available commands.`,
 			{ parse_mode: "HTML", link_preview_options: { is_disabled: true } }
 		);
 	});

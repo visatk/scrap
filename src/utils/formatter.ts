@@ -71,26 +71,23 @@ export function formatCrawlStatus(
 	total?: number,
 	finished?: number,
 ): string {
-	const statusEmoji =
-		status === "completed"
-			? "✅"
-			: status === "errored" || status.includes("cancelled")
-				? "❌"
-				: "⏳";
+	let statusEmoji = "⏳";
+	let statusText = "Processing";
 
-	let msg =
-		`${statusEmoji} <b>Live Crawl Status</b>\n\n` +
-		`🎯 <b>Task ID:</b> <code>${escapeHtml(jobId)}</code>\n` +
-		`📌 <b>Status:</b> ${escapeHtml(status)}\n`;
+	if (status === "completed") { statusEmoji = "✅"; statusText = "Completed"; }
+	else if (status === "cancelled") { statusEmoji = "🛑"; statusText = "Cancelled"; }
+	else if (status === "timed_out") { statusEmoji = "⏱"; statusText = "Timed Out"; }
+	else if (status === "errored" || status === "failed") { statusEmoji = "❌"; statusText = "Failed"; }
 
-	if (total !== undefined) {
-		msg += `🗂 <b>Pages Discovered:</b> ${total}\n`;
-	}
-	if (finished !== undefined) {
-		msg += `🚀 <b>Pages Processed:</b> ${finished}\n`;
+	let text = `${statusEmoji} <b>Task Status</b>\n\n`;
+	text += `🆔 <b>ID:</b> <code>${jobId}</code>\n`;
+	text += `📊 <b>Status:</b> ${statusText}\n`;
+
+	if (total !== undefined && finished !== undefined) {
+		text += `📈 <b>Progress:</b> ${finished} / ${total} pages\n`;
 	}
 
-	return msg;
+	return text;
 }
 
 /**
@@ -131,15 +128,11 @@ export async function sendKnowledgeBaseDocument(
 		hostname = new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
 	} catch {}
 
-	let caption = jobId
-		? `✅ <b>Crawl Successfully Completed!</b>\n\n🎯 <b>Task ID:</b> <code>${jobId}</code>\n`
-		: `🤖 <b>AI Knowledge Base</b>\n🔗 ${url}\n`;
-		
-	caption += `📈 <b>Stats:</b> Processed ${finished} out of ${total} pages.\n\n` +
-			   `💡 <i>Pro Tip: Upload this .md file directly to Claude, ChatGPT, or Gemini for instant context!</i>`;
-
-	await ctx.replyWithDocument(new InputFile(buffer, `AI_KnowledgeBase_${hostname}.md`), {
-		caption,
+	await ctx.replyWithDocument(new InputFile(buffer, `Pine_Docs_${hostname}.md`), {
+		caption: `✅ <b>Knowledge Base Ready!</b>\n\n` +
+				 (jobId ? `🆔 <b>Task:</b> <code>${jobId}</code>\n` : "") +
+				 `📈 <b>Processed:</b> ${finished} of ${total} pages\n\n` +
+				 `💡 <i>Pro Tip: Feed this .md file to Claude, ChatGPT, or Gemini for instant context!</i>`,
 		parse_mode: "HTML"
 	});
 }
