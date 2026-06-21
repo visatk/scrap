@@ -1,0 +1,36 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "pine",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-06-21",
+	"observability": {
+		"enabled": true
+	},
+	"upload_source_maps": true,
+	"compatibility_flags": ["nodejs_compat"],
+
+	// Environment Variables
+	"vars": {
+		"CF_ACCOUNT_ID": "" // Set this in your dashboard or secrets
+		// BOT_TOKEN and CF_API_TOKEN should be set as secrets:
+		// npx wrangler secret put BOT_TOKEN
+		// npx wrangler secret put CF_API_TOKEN
+	},
+
+	// Workers KV Namespaces
+	"kv_namespaces": [
+		{
+			"binding": "CRAWL_CACHE",
+			"id": "" // Create with: npx wrangler kv namespace create CRAWL_CACHE
+		}
+	],
+
+	// Browser Rendering
+	"browser": {
+		"binding": "BROWSER"
+	}
+}
