@@ -112,62 +112,7 @@ export async function handleCrawl(ctx: BotContext): Promise<void> {
 
 		await ctx.reply(msg, { parse_mode: "HTML", link_preview_options: { is_disabled: true } });
 
-		// 4. Move polling and document generation to a background task
-		const backgroundTask = async () => {
-			try {
-				const checkAbort = async () => await getCancelSignal(env.CRAWL_CACHE, jobId);
-				const result = await pollCrawl(env.CF_ACCOUNT_ID, env.CF_API_TOKEN, jobId, checkAbort);
-				
-				const pagesArray = result.result.records ?? result.result.pages ?? [];
-				const total = result.result.total ?? pagesArray.length;
-				const finished = result.result.finished ?? pagesArray.length;
-
-				// Cache the result
-				await setCachedCrawl(env.CRAWL_CACHE, url, pagesArray, total, finished);
-
-				// Update Job Status
-				await saveJob(env.CRAWL_CACHE, userId, {
-					jobId,
-					url,
-					status: "completed",
-					timestamp: Date.now()
-				});
-
-				// Generate and send Markdown document
-				await sendKnowledgeBaseDocument(ctx, url, pagesArray, jobId, finished, total);
-			} catch (bgError) {
-				const errMsg = bgError instanceof Error ? bgError.message : String(bgError);
-				
-				let newStatus = "errored";
-				if (errMsg.includes("cancelled_by_user")) newStatus = "cancelled";
-				else if (errMsg.includes("timeout") || errMsg.includes("deadline")) newStatus = "timed_out";
-
-				// Update Job Status to errored/cancelled/timed_out
-				await saveJob(env.CRAWL_CACHE, userId, {
-					jobId,
-					url,
-					status: newStatus,
-					timestamp: Date.now()
-				});
-
-				console.error(JSON.stringify({ message: "background polling failed", jobId, error: errMsg }));
-				
-				if (newStatus === "cancelled") {
-					await ctx.reply(`🛑 <b>Task Cancelled:</b> <code>${jobId}</code>`, { parse_mode: "HTML" });
-				} else {
-					await ctx.reply(
-						`❌ <b>Task Failed:</b> <code>${jobId}</code>\n` +
-						`<pre>${escapeHtml(errMsg)}</pre>\n` +
-						`<i>Check</i> <code>/status ${jobId}</code> <i>for details.</i>`,
-						{ parse_mode: "HTML" }
-					);
-				}
-			}
-		};
-
-		// Instruct Cloudflare to keep the Worker alive to finish the background task
-		ctx.executionCtx.waitUntil(backgroundTask());
-
+		// Background polling is now handled by the Cron Trigger in index.ts
 	} catch (error) {
 		console.error(JSON.stringify({ message: "crawl command failed to start", url, error: error instanceof Error ? error.message : String(error) }));
 		await ctx.reply(

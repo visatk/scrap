@@ -1,5 +1,9 @@
 import { createBot } from "./bot";
 import { webhookCallback } from "grammy";
+import { getActiveJobs, getCancelSignal, saveJob, deleteJob } from "./services/db";
+import { getCrawlStatus } from "./services/crawler";
+import { setCachedCrawl } from "./services/cache";
+import { sendDocumentToUser } from "./utils/formatter";
 
 export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -115,4 +119,73 @@ export default {
 		// ── 404 for everything else ──────────────────────────────────────
 		return new Response("Not Found", { status: 404 });
 	},
+
+	// ── Cron Trigger Handler ─────────────────────────────────────────
+	async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext): Promise<void> {
+		// Fetch all currently running/pending jobs
+		const activeJobs = await getActiveJobs(env.CRAWL_CACHE);
+		
+		for (const job of activeJobs) {
+			try {
+				// Check if the user requested a cancellation
+				const isCancelled = await getCancelSignal(env.CRAWL_CACHE, job.jobId);
+				if (isCancelled) {
+					await saveJob(env.CRAWL_CACHE, job.userId, {
+						jobId: job.jobId,
+						url: job.url,
+						status: "cancelled",
+						timestamp: Date.now(),
+					});
+					continue;
+				}
+
+				// Check status from Cloudflare API
+				const result = await getCrawlStatus(env.CF_ACCOUNT_ID, env.CF_API_TOKEN, job.jobId, true);
+				const status = result.result?.status;
+
+				if (status === "completed") {
+					// Fetch full payload
+					const fullResult = await getCrawlStatus(env.CF_ACCOUNT_ID, env.CF_API_TOKEN, job.jobId, false);
+					const pagesArray = fullResult.result?.records ?? fullResult.result?.pages ?? [];
+					const total = fullResult.result?.total ?? pagesArray.length;
+					const finished = fullResult.result?.finished ?? pagesArray.length;
+
+					// Cache the result
+					await setCachedCrawl(env.CRAWL_CACHE, job.url, pagesArray, total, finished);
+
+					// Mark as completed
+					await saveJob(env.CRAWL_CACHE, job.userId, {
+						jobId: job.jobId,
+						url: job.url,
+						status: "completed",
+						timestamp: Date.now(),
+					});
+
+					// Push document to Telegram via Bot API
+					await sendDocumentToUser(
+						env.BOT_TOKEN,
+						job.userId,
+						job.url,
+						pagesArray,
+						job.jobId,
+						finished,
+						total
+					);
+
+				} else if (status !== "pending" && status !== "running") {
+					// It failed or timed out on Cloudflare's end
+					await saveJob(env.CRAWL_CACHE, job.userId, {
+						jobId: job.jobId,
+						url: job.url,
+						status: status === "cancelled_due_to_timeout" ? "timed_out" : "errored",
+						timestamp: Date.now(),
+					});
+				}
+				// If it's still running, we do nothing and wait for the next cron cycle.
+
+			} catch (err) {
+				console.error(JSON.stringify({ message: "Cron error processing job", jobId: job.jobId, error: err instanceof Error ? err.message : String(err) }));
+			}
+		}
+	}
 } satisfies ExportedHandler<Env>;

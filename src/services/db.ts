@@ -12,6 +12,16 @@ export async function saveJob(kv: KVNamespace, userId: number, job: CrawlJobReco
 	await kv.put(`job:${userId}:${job.jobId}`, JSON.stringify(job), {
 		expirationTtl: SEVEN_DAYS_IN_SECONDS
 	});
+	
+	// If the job is active, also save it to the active_job index for the cron trigger
+	if (job.status === "running" || job.status === "pending") {
+		await kv.put(`active_job:${job.jobId}`, JSON.stringify({ userId, url: job.url }), {
+			expirationTtl: SEVEN_DAYS_IN_SECONDS
+		});
+	} else {
+		// If completed/failed/cancelled, remove from active index
+		await kv.delete(`active_job:${job.jobId}`);
+	}
 }
 
 export async function getJobs(kv: KVNamespace, userId: number): Promise<CrawlJobRecord[]> {
@@ -32,7 +42,42 @@ export async function deleteJob(kv: KVNamespace, userId: number, jobId: string):
 	const existing = await kv.get(key);
 	if (!existing) return false;
 	await kv.delete(key);
+	await kv.delete(`active_job:${jobId}`); // Clean up active index just in case
 	return true;
+}
+
+// ─── Active Jobs Index (For Cron Triggers) ────────────────────────────
+
+export interface ActiveJobIndex {
+	jobId: string;
+	userId: number;
+	url: string;
+}
+
+export async function getActiveJobs(kv: KVNamespace): Promise<ActiveJobIndex[]> {
+	let cursor: string | undefined;
+	const activeJobs: ActiveJobIndex[] = [];
+
+	do {
+		const list = await kv.list({ prefix: `active_job:`, cursor });
+		
+		await Promise.all(
+			list.keys.map(async (key) => {
+				const data = await kv.get(key.name);
+				if (data) {
+					const parsed = JSON.parse(data);
+					activeJobs.push({
+						jobId: key.name.split(":")[1],
+						userId: parsed.userId,
+						url: parsed.url
+					});
+				}
+			})
+		);
+		cursor = list.list_complete ? undefined : list.cursor;
+	} while (cursor);
+
+	return activeJobs;
 }
 
 // ─── Cancel Signals ───────────────────────────────────────────────────

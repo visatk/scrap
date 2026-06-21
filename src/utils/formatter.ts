@@ -1,5 +1,5 @@
 import type { CrawlPage, BotContext } from "../types";
-import { InputFile } from "grammy";
+import { InputFile, Bot } from "grammy";
 
 /** Characters that must be escaped in Telegram HTML parse mode. */
 const HTML_ESCAPE_MAP: Record<string, string> = {
@@ -131,6 +131,37 @@ export async function sendKnowledgeBaseDocument(
 	await ctx.replyWithDocument(new InputFile(buffer, `Pine_Docs_${hostname}.md`), {
 		caption: `✅ <b>Knowledge Base Ready!</b>\n\n` +
 				 (jobId ? `🆔 <b>Task:</b> <code>${jobId}</code>\n` : "") +
+				 `📈 <b>Processed:</b> ${finished} of ${total} pages\n\n` +
+				 `💡 <i>Pro Tip: Feed this .md file to Claude, ChatGPT, or Gemini for instant context!</i>`,
+		parse_mode: "HTML"
+	});
+}
+
+/**
+ * Sends a Knowledge Base document directly to a user ID via the Telegram API.
+ * Used by background Cron Triggers where a BotContext is not available.
+ */
+export async function sendDocumentToUser(
+	botToken: string,
+	userId: number,
+	url: string,
+	pagesArray: CrawlPage[],
+	jobId: string,
+	finished: number,
+	total: number
+): Promise<void> {
+	const mdContent = generateAiKnowledgeBase(url, pagesArray);
+	const buffer = new TextEncoder().encode(mdContent);
+	
+	let hostname = "docs";
+	try {
+		hostname = new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
+	} catch {}
+
+	const bot = new Bot(botToken);
+	await bot.api.sendDocument(userId, new InputFile(buffer, `Pine_Docs_${hostname}.md`), {
+		caption: `✅ <b>Knowledge Base Ready!</b>\n\n` +
+				 `🆔 <b>Task:</b> <code>${jobId}</code>\n` +
 				 `📈 <b>Processed:</b> ${finished} of ${total} pages\n\n` +
 				 `💡 <i>Pro Tip: Feed this .md file to Claude, ChatGPT, or Gemini for instant context!</i>`,
 		parse_mode: "HTML"
