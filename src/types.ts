@@ -78,3 +78,23 @@ export type BotContext = Context & {
 	env: Env;
 	executionCtx: ExecutionContext;
 };
+
+// ─── User State & Job History Types ─────────────────────────────────────────
+
+export interface CrawlJobRecord {
+	jobId: string;
+	url: string;
+	status: string;
+	timestamp: number;
+}
+
+export interface CrawlPreset {
+	depth: number;
+	limit: number;
+}
+
+export interface WizardSession {
+	step: "AWAIT_URL" | "AWAIT_DEPTH" | "AWAIT_LIMIT";
+	url?: string;
+	depth?: number;
+}

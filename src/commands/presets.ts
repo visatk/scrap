@@ -1,0 +1,105 @@
+import { BotContext } from "../types";
+import { getPresets, savePreset, deletePreset, setActivePreset, getActivePreset } from "../services/db";
+
+export async function handlePresets(ctx: BotContext): Promise<void> {
+	const userId = ctx.from?.id;
+	if (!userId) return;
+
+	const presets = await getPresets(ctx.env.CRAWL_CACHE, userId);
+	const activePreset = await getActivePreset(ctx.env.CRAWL_CACHE, userId);
+
+	const presetNames = Object.keys(presets);
+	if (presetNames.length === 0) {
+		await ctx.reply("⚙️ <b>No presets found.</b>\n\nSave one using:\n<code>/savepreset mypreset 2 50</code>", { parse_mode: "HTML" });
+		return;
+	}
+
+	let msg = `⚙️ <b>Your Saved Presets:</b>\n\n`;
+	for (const name of presetNames) {
+		const p = presets[name];
+		const isActive = name === activePreset ? " ✅ (Active)" : "";
+		msg += `🔹 <b>${name}</b>${isActive}\n`;
+		msg += `└ Depth: ${p.depth} | Limit: ${p.limit}\n\n`;
+	}
+
+	msg += `<i>Load a preset:</i> <code>/loadpreset &lt;name&gt;</code>\n`;
+	msg += `<i>Delete a preset:</i> <code>/delpreset &lt;name&gt;</code>`;
+
+	await ctx.reply(msg, { parse_mode: "HTML" });
+}
+
+export async function handleSavePreset(ctx: BotContext): Promise<void> {
+	const args = ctx.message?.text?.split(" ").slice(1) ?? [];
+	const userId = ctx.from?.id;
+	if (!userId) return;
+
+	if (args.length < 1) {
+		await ctx.reply("⚠️ <b>Usage:</b> <code>/savepreset &lt;name&gt; [depth] [limit]</code>\n\nExample: <code>/savepreset fast 1 10</code>", { parse_mode: "HTML" });
+		return;
+	}
+
+	const name = args[0].toLowerCase();
+	const depth = args[1] ? parseInt(args[1], 10) : 2;
+	const limit = args[2] ? parseInt(args[2], 10) : 50;
+
+	if (isNaN(depth) || isNaN(limit)) {
+		await ctx.reply("⚠️ Depth and Limit must be numbers.", { parse_mode: "HTML" });
+		return;
+	}
+
+	await savePreset(ctx.env.CRAWL_CACHE, userId, name, { depth, limit });
+	await ctx.reply(`💾 <b>Preset Saved!</b>\n\nName: <b>${name}</b>\nDepth: ${depth}\nLimit: ${limit}\n\nType <code>/loadpreset ${name}</code> to use it!`, { parse_mode: "HTML" });
+}
+
+export async function handleLoadPreset(ctx: BotContext): Promise<void> {
+	const args = ctx.message?.text?.split(" ").slice(1) ?? [];
+	const userId = ctx.from?.id;
+	if (!userId) return;
+
+	if (args.length < 1) {
+		await ctx.reply("⚠️ <b>Usage:</b> <code>/loadpreset &lt;name&gt;</code>\nOr use <code>/loadpreset default</code> to clear the active preset.", { parse_mode: "HTML" });
+		return;
+	}
+
+	const name = args[0].toLowerCase();
+
+	if (name === "default" || name === "none" || name === "clear") {
+		await setActivePreset(ctx.env.CRAWL_CACHE, userId, "");
+		await ctx.reply("✅ <b>Active preset cleared.</b> Using system defaults.", { parse_mode: "HTML" });
+		return;
+	}
+
+	const presets = await getPresets(ctx.env.CRAWL_CACHE, userId);
+	if (!presets[name]) {
+		await ctx.reply(`⚠️ <b>Preset '${name}' not found.</b>\nUse /presets to see available presets.`, { parse_mode: "HTML" });
+		return;
+	}
+
+	await setActivePreset(ctx.env.CRAWL_CACHE, userId, name);
+	await ctx.reply(`✅ <b>Preset Loaded!</b>\n\nActive Preset: <b>${name}</b> (Depth: ${presets[name].depth}, Limit: ${presets[name].limit})\n\nFuture /crawl commands will use these settings!`, { parse_mode: "HTML" });
+}
+
+export async function handleDelPreset(ctx: BotContext): Promise<void> {
+	const args = ctx.message?.text?.split(" ").slice(1) ?? [];
+	const userId = ctx.from?.id;
+	if (!userId) return;
+
+	if (args.length < 1) {
+		await ctx.reply("⚠️ <b>Usage:</b> <code>/delpreset &lt;name&gt;</code>", { parse_mode: "HTML" });
+		return;
+	}
+
+	const name = args[0].toLowerCase();
+	const success = await deletePreset(ctx.env.CRAWL_CACHE, userId, name);
+
+	if (success) {
+		// If it was the active preset, clear it
+		const active = await getActivePreset(ctx.env.CRAWL_CACHE, userId);
+		if (active === name) {
+			await setActivePreset(ctx.env.CRAWL_CACHE, userId, "");
+		}
+		await ctx.reply(`🗑 <b>Preset Deleted:</b> <code>${name}</code>`, { parse_mode: "HTML" });
+	} else {
+		await ctx.reply(`⚠️ <b>Preset '${name}' not found.</b>`, { parse_mode: "HTML" });
+	}
+}

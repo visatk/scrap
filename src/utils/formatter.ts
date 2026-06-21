@@ -1,4 +1,5 @@
-import type { CrawlPage } from "../types";
+import type { CrawlPage, BotContext } from "../types";
+import { InputFile } from "grammy";
 
 /** Characters that must be escaped in Telegram HTML parse mode. */
 const HTML_ESCAPE_MAP: Record<string, string> = {
@@ -90,4 +91,55 @@ export function formatCrawlStatus(
 	}
 
 	return msg;
+}
+
+/**
+ * Normalizes a URL by removing trailing slashes and hashes for consistent caching.
+ */
+export function normalizeUrl(urlStr: string): string {
+	try {
+		const parsed = new URL(urlStr);
+		parsed.hash = "";
+		let result = parsed.toString();
+		if (result.endsWith("/")) {
+			result = result.slice(0, -1);
+		}
+		return result;
+	} catch {
+		return urlStr;
+	}
+}
+
+/**
+ * Helper to generate and send the Knowledge Base document to the user.
+ * This removes code duplication across commands.
+ */
+export async function sendKnowledgeBaseDocument(
+	ctx: BotContext,
+	url: string,
+	pagesArray: CrawlPage[],
+	jobId: string | null, // null if served from cache
+	finished: number,
+	total: number
+): Promise<void> {
+	const mdContent = generateAiKnowledgeBase(url, pagesArray);
+	const buffer = new TextEncoder().encode(mdContent);
+	
+	// Create a clean filename from the hostname
+	let hostname = "docs";
+	try {
+		hostname = new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
+	} catch {}
+
+	let caption = jobId
+		? `✅ <b>Crawl Successfully Completed!</b>\n\n🎯 <b>Task ID:</b> <code>${jobId}</code>\n`
+		: `🤖 <b>AI Knowledge Base</b>\n🔗 ${url}\n`;
+		
+	caption += `📈 <b>Stats:</b> Processed ${finished} out of ${total} pages.\n\n` +
+			   `💡 <i>Pro Tip: Upload this .md file directly to Claude, ChatGPT, or Gemini for instant context!</i>`;
+
+	await ctx.replyWithDocument(new InputFile(buffer, `AI_KnowledgeBase_${hostname}.md`), {
+		caption,
+		parse_mode: "HTML"
+	});
 }

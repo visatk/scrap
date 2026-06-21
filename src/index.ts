@@ -78,8 +78,30 @@ export default {
 			}>();
 
 			if (result.ok) {
+				// Also set commands
+				try {
+					const bot = createBot(env.BOT_TOKEN, env, ctx);
+					await bot.api.setMyCommands([
+						{ command: "start", description: "Start the bot" },
+						{ command: "help", description: "Show all commands" },
+						{ command: "crawl", description: "Start a new crawl job" },
+						{ command: "jobs", description: "List your crawl jobs" },
+						{ command: "status", description: "Check job status: /status <job_id>" },
+						{ command: "results", description: "Fetch results: /results <job_id>" },
+						{ command: "cancel", description: "Cancel a job: /cancel <job_id>" },
+						{ command: "delete", description: "Delete from history: /delete <job_id>" },
+						{ command: "presets", description: "List saved crawl presets" },
+						{ command: "savepreset", description: "Save current config as preset" },
+						{ command: "loadpreset", description: "Load a preset: /loadpreset <name>" },
+						{ command: "delpreset", description: "Delete a preset: /delpreset <name>" },
+						{ command: "cancel_session", description: "Abort active wizard step" }
+					]);
+				} catch (err) {
+					console.error("Failed to set commands:", err);
+				}
+
 				return new Response(
-					`✅ Webhook set to ${webhookUrl}`,
+					`✅ Webhook set to ${webhookUrl}\n✅ Commands registered`,
 					{ status: 200, headers: { "Content-Type": "text/plain" } },
 				);
 			} else {

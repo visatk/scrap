@@ -101,12 +101,17 @@ export async function pollCrawl(
 	accountId: string,
 	apiToken: string,
 	jobId: string,
+	checkAbort?: () => Promise<boolean>,
 	maxWaitMs: number = MAX_POLL_MS,
 	intervalMs: number = POLL_INTERVAL_MS,
 ): Promise<CrawlJobResult> {
 	const deadline = Date.now() + maxWaitMs;
 
 	while (Date.now() < deadline) {
+		if (checkAbort && await checkAbort()) {
+			throw new Error(`Crawl job ${jobId} ended with failed status: cancelled_by_user`);
+		}
+
 		const result = await getCrawlStatus(accountId, apiToken, jobId, true);
 		const status = result.result.status;
 
@@ -136,6 +141,7 @@ export async function crawlUrl(
 	targetUrl: string,
 	depth: number = 2,
 	limit: number = 50,
+	checkAbort?: () => Promise<boolean>,
 ): Promise<{
 	jobId: string;
 	pages: CrawlPage[];
@@ -156,7 +162,7 @@ export async function crawlUrl(
 	const jobId = await startCrawl(accountId, apiToken, crawlRequest);
 
 	// Poll until complete
-	const result = await pollCrawl(accountId, apiToken, jobId);
+	const result = await pollCrawl(accountId, apiToken, jobId, checkAbort);
 
 	// In the new API, results are in `records` instead of `pages`
 	const pagesArray = result.result.records ?? result.result.pages ?? [];

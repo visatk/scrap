@@ -1,14 +1,15 @@
 import type { Context } from "grammy";
 import { InputFile } from "grammy";
 import { getCrawlStatus } from "../services/crawler";
-import { formatCrawlStatus, generateAiKnowledgeBase } from "../utils/formatter";
+import { formatCrawlStatus, sendKnowledgeBaseDocument } from "../utils/formatter";
+import { BotContext } from "../types";
 
 /**
  * Handle /status <job_id> command.
  * Checks the status of an ongoing or completed crawl job.
  */
-export async function handleStatus(ctx: Context): Promise<void> {
-	const env = (ctx as unknown as { env: Env }).env;
+export async function handleStatus(ctx: BotContext): Promise<void> {
+	const env = ctx.env;
 	const text = ctx.message?.text ?? "";
 	const parts = text.split(/\s+/);
 
@@ -53,18 +54,13 @@ export async function handleStatus(ctx: Context): Promise<void> {
 		// If complete and has pages, show full results as a Document
 		if (status === "completed" && pages && pages.length > 0) {
 			// Try to find the URL from the first page for the title/filename
-			const url = pages[0]?.url ?? "unknown-source";
-			const mdContent = generateAiKnowledgeBase(url, pages);
-			const buffer = new TextEncoder().encode(mdContent);
-			const hostname = url === "unknown-source" ? "docs" : new URL(url).hostname.replace(/[^a-zA-Z0-9]/g, '_');
-
-			await ctx.replyWithDocument(new InputFile(buffer, `AI_KnowledgeBase_${hostname}.md`), {
-				caption: `✅ <b>Crawl Successfully Completed!</b>\n\n` +
-						 `🎯 <b>Task ID:</b> <code>${jobId}</code>\n` +
-						 `📈 <b>Stats:</b> Processed ${finished} out of ${total} pages.\n\n` +
-						 `💡 <i>Pro Tip: Upload this .md file directly to Claude, ChatGPT, or Gemini for instant, accurate context!</i>`,
-				parse_mode: "HTML"
-			});
+			let url = "unknown-source";
+			if (pages.length > 0 && pages[0].url) {
+				try {
+					url = new URL(pages[0].url).origin;
+				} catch {}
+			}
+			await sendKnowledgeBaseDocument(ctx, url, pages, jobId, finished ?? pages.length, total ?? pages.length);
 			return;
 		}
 
